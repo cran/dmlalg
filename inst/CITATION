@@ -1,0 +1,11 @@
+citHeader("To cite dmlalg in publications use:")
+
+citEntry(
+  entry    = "Article",
+  title    = "Regularizing Double Machine Learning in Partially Linear Endogenous Models",
+  author   = c(person(given = "Corinne", family = "Emmenegger"), 
+               person(given = "Peter", family = "B\\\"uhlmann")),
+  journal  = "arXiv preprint arXiv:2101.12525",
+  year     = "2021",
+  textVersion = paste("Corinne Emmenegger and Peter Buehlmann (2021). Regularizing Double Machine Learning in Partially Linear Endogenous Models. arXiv preprint arXiv:2101.12525.")
+)
