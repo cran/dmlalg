@@ -1,5 +1,5 @@
 params <- NULL
-
+tol <- 0.01
 
 ####################
 # helper functions
@@ -300,10 +300,14 @@ get_data_list <- function() {
 
 test_that("numerical estimators of beta and sigma are correct if d = 1", {
   check_beta_output_numeric <- function(res_old, res) {
-    expect_equal(as.numeric(res_old$beta_N_infty_DML2), as.numeric(res$beta_DML))
-    expect_equal(as.vector(res_old$beta_N_gamma_DML2), as.vector(res$beta_gamma))
-    expect_equal(as.numeric(res_old$as_var_infty_DML2), as.numeric(res$as_var_DML))
-    expect_equal(as.vector(res_old$as_var_gamma_DML2), as.vector(res$as_var_gamma))
+    expect_equal(as.numeric(res_old$beta_N_infty_DML2),
+                 as.numeric(res$beta_DML), tolerance = tol)
+    expect_equal(as.vector(res_old$beta_N_gamma_DML2),
+                 as.vector(res$beta_gamma), tolerance = tol)
+    expect_equal(as.numeric(res_old$as_var_infty_DML2),
+                 as.numeric(res$as_var_DML), tolerance = tol)
+    expect_equal(as.vector(res_old$as_var_gamma_DML2),
+                 as.vector(res$as_var_gamma), tolerance = tol)
   }
 
   do_computations_numeric <- function(aa, ww, xx, yy) {
@@ -372,22 +376,29 @@ test_that("numerical estimators of beta and sigma are correct if d > 1", {
     DML_old <- res_old$DML_statistics
     DML <- res$DML_statistics
 
-    expect_equal(DML_old$beta_DML, DML$beta_DML)
-    expect_equal(DML_old$sd_DML, DML$sd_DML)
-    expect_equal(DML_old$var_DML, DML$var_DML)
-    expect_equal(DML_old$pval_DML, DML$pval_DML)
-    expect_equal(DML_old$CI_DML, DML$CI_DML)
+    expect_equal(DML_old$beta_DML, DML$beta_DML, tolerance = tol)
+    expect_equal(DML_old$sd_DML, DML$sd_DML, tolerance = tol)
+    expect_equal(DML_old$var_DML, DML$var_DML, tolerance = tol)
+    expect_equal(DML_old$pval_DML, DML$pval_DML, tolerance = tol)
+    expect_equal(DML_old$CI_DML, DML$CI_DML, tolerance = tol)
 
     regsDML_old <- res_old$regsDML_statistics
     regsDML <- res$regsDML_statistics
 
-    expect_equal(regsDML_old$beta_regsDML, regsDML$beta_regsDML)
-    expect_equal(regsDML_old$sd_regsDML, regsDML$sd_regsDML)
-    expect_equal(regsDML_old$var_regsDML, regsDML$var_regsDML)
-    expect_equal(regsDML_old$pval_regsDML, regsDML$pval_regsDML)
-    expect_equal(regsDML_old$CI_regsDML, regsDML$CI_regsDML)
-    expect_equal(regsDML_old$gamma_aN, regsDML$gamma_aN)
-    expect_equal(regsDML_old$message_regsDML, regsDML$message_regsDML)
+    expect_equal(regsDML_old$beta_regsDML,
+                 regsDML$beta_regsDML, tolerance = tol)
+    expect_equal(regsDML_old$sd_regsDML,
+                 regsDML$sd_regsDML, tolerance = tol)
+    expect_equal(regsDML_old$var_regsDML,
+                 regsDML$var_regsDML, tolerance = tol)
+    expect_equal(regsDML_old$pval_regsDML,
+                 regsDML$pval_regsDML, tolerance = tol)
+    expect_equal(regsDML_old$CI_regsDML,
+                 regsDML$CI_regsDML, tolerance = tol)
+    expect_equal(regsDML_old$gamma_aN,
+                 regsDML$gamma_aN, tolerance = tol)
+    expect_equal(regsDML_old$message_regsDML,
+                 regsDML$message_regsDML, tolerance = tol)
   }
 
   aa <- aa_mat

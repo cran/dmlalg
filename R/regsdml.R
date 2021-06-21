@@ -251,11 +251,155 @@ DML_reg_error_message <- function(is_DML_prob, is_reg_prob) {
   problematic_schemes <-
     paste(c("DML", ", ", "a regularization scheme")[c(is_DML_prob, is_DML_prob && is_reg_prob, is_reg_prob)],
           collapse = "")
-  paste("Essentially perfect fit. not enough non-NA results among the S repetitions.",
+  paste("Essentially perfect fit, not enough non-NA results among the S repetitions.",
         "\nSingularity occured in: ",
         problematic_schemes,
         "\nPlease rerun regsdml without it or try using 'DML = DML2'.",
         sep = "")
+}
+
+# If some NA-rows are present in beta_all_unlist, try to replace them
+return_W_E_res_fun <- function(beta_all, beta_all_unlist,
+                               aa, ww, xx, yy,
+                               K, gamma,
+                               DML, do_DML, do_regsDML, do_regDML,
+                               do_regDML_all_gamma,
+                               safety, cond_method, params, do_parallel,
+                               parallel, S, ncpus, cl, beta_all_new = NULL) {
+  # identify NA-rows of beta_all_unlist and delete respective warning and
+  # error messages
+  na_rows_all <- do.call(rbind, apply(beta_all_unlist, 1, find_na_rows))
+  na_rows <- unlist(na_rows_all[, 1])
+  problematic_names <- do.call(rbind, na_rows_all[, 2])
+  if (!is.null(problematic_names)) {
+    problematic_names <- apply(problematic_names, 2, unique)
+  }
+  # ith entry is TRUE if ith repetition among the S returns NA
+  na_rows <- (na_rows >= 1)
+  non_na_rows <- !na_rows
+
+  # adapt error and warning messages accordingly
+  errors <- unique(do.call(c, beta_all[, "error"][non_na_rows]))
+  warningMsgs <- unique(do.call(c, beta_all[, "warning"][non_na_rows]))
+  beta_all <- NULL
+
+  # check if design is regular enough to give enough non-NA returns among
+  # the S repetitions
+  # if more than half of the S repetitions resulted inNAs, stop
+  stopping_criterion <- (sum(na_rows) > (0.5 * S))
+  if (stopping_criterion) {
+    DML_problematic <- sum(grepl("DML", problematic_names)) >= 1
+    reg_problematic <- sum(grepl("gamma", problematic_names)) >= 1
+    # one should only be in here if some NA-values were observed
+    stopifnot(DML_problematic + reg_problematic >= 1)
+    new_error_message <- DML_reg_error_message(is_DML_prob = DML_problematic,
+                                               is_reg_prob = reg_problematic)
+
+    errors <- c(errors, new_error_message)
+  } else if (sum(na_rows) >= 1) { # if some NAs were returned,
+    # try to replace them
+    warningMsgs <- c(warningMsgs, "Essentially perfect fit: do S more repetitions.")
+    # If beta_all_new is not computed yet, compute it
+    beta_all_new <- if (is.null(beta_all_new)){
+      batch_correction(aa = aa, ww = ww, xx = xx, yy = yy,
+                       K = K,
+                       gamma = gamma,
+                       DML = DML,
+                       do_DML = do_DML,
+                       do_regsDML = do_regsDML,
+                       do_regDML = do_regDML,
+                       do_regDML_all_gamma = do_regDML_all_gamma,
+                       safety = safety,
+                       cond_method = cond_method,
+                       params = params,
+                       do_parallel = do_parallel,
+                       parallel = parallel,
+                       S = S, ncpus = ncpus, cl = cl)
+    } else {
+      beta_all_new
+    }
+
+    beta_all_new <- do.call(rbind, beta_all_new)
+    beta_all_unlist_new <- do.call(rbind, beta_all_new[, "value"])
+
+    # identify NA-rows of beta_all_unlist_new and delete respective warning and
+    # error messages
+    na_rows_all_new <- do.call(rbind, apply(beta_all_unlist_new, 1, find_na_rows))
+    na_rows_new <- unlist(na_rows_all_new[, 1])
+    problematic_names_new <- do.call(rbind, na_rows_all_new[, 2])
+    if (!is.null(problematic_names_new)) {
+      problematic_names_new <- apply(problematic_names_new, 2, unique)
+    }
+    # ith entry is TRUE if ith repetition among the S returns NA
+    na_rows_new <- (na_rows_new >= 1)
+    non_na_rows_new <- !na_rows_new
+
+    sum_na_rows <- sum(na_rows)
+    if (sum(non_na_rows_new) < sum_na_rows) { # there are not enough new
+      # non-NA cases
+      # adapt error and warning messages accordingly
+      errors <-
+        unique(c(errors,
+                 unique(do.call(c, beta_all_new[, "error"][non_na_rows_new]))))
+      warningMsgs <-
+        unique(c(warningMsgs,
+                 unique(do.call(c, beta_all_new[, "warning"][non_na_rows_new]))))
+      beta_all_new <- NULL
+
+      DML_problematic_new <- (sum(grepl("DML", problematic_names_new)) >= 1) ||
+        (sum(grepl("DML", problematic_names)) >= 1)
+      reg_problematic_new <- (sum(grepl("gamma", problematic_names_new)) >= 1) ||
+        (sum(grepl("gamma", problematic_names)) >= 1)
+      stopifnot(DML_problematic_new + reg_problematic_new >= 1)
+      new_error_message_new <- DML_reg_error_message(is_DML_prob = DML_problematic_new,
+                                                     is_reg_prob = reg_problematic_new)
+      errors <- unique(c(errors, new_error_message_new))
+
+    } else { # there are enough new non-NA cases
+      # adapt error and warning messages accordingly
+      errors <-
+        unique(c(errors,
+                 unique(do.call(c, beta_all_new[, "error"][non_na_rows_new][seq_len(sum_na_rows)]))))
+      warningMsgs <-
+        unique(c(warningMsgs,
+                 unique(do.call(c, beta_all_new[, "warning"][non_na_rows_new][seq_len(sum_na_rows)]))))
+      beta_all_new <- NULL
+
+      beta_all_unlist <-
+        rbind(beta_all_unlist[non_na_rows, ],
+              beta_all_unlist_new[non_na_rows_new, ][seq_len(sum_na_rows), ])
+      beta_all_unlist_new <- NULL
+    }
+  }
+
+  # return warnings, errors and results of the algorithm that can
+  # be further processed to be finally returned
+  list(beta_all_unlist = beta_all_unlist,
+       errors = errors,
+       warningMsgs = warningMsgs)
+}
+
+# return errors and warnings encountered estimating the
+# conditional expectations
+print_W_E_fun <- function(errors, warningMsgs) {
+  if (!is.null(errors)) { # there are errors
+    print_W_E <- if (!is.null(warningMsgs)) { # there are errors and warnings
+      paste("\nError messages:\n",
+            paste(errors, collapse = "\n"),
+            "\n\n",
+            "Warning messages:\n",
+            paste(warningMsgs, collapse = "\n"),
+            sep = "")
+    } else { # there are errors but no warnings
+      paste("\nError messages:",
+            paste(errors, collapse = "\n"))
+    } # end print_W_E
+    stop(print_W_E)
+  } else if (!is.null(warningMsgs)) { # there are warnings but no errors
+    warning(paste("\nWarning messages:",
+                  paste(warningMsgs, collapse = "\n"),
+                  sep = "\n"))
+  }
 }
 
 # estimating linear coefficients with double machine learning (DML) and
@@ -338,126 +482,26 @@ do_regsDML, do_regDML, or safety is TRUE")
   beta_all <- do.call(rbind, beta_all)
   beta_all_unlist <- do.call(rbind, beta_all[, "value"])
 
-  # identify NA-rows of beta_all_unlist and delete respective warning and
-  # error messages
-  na_rows_all <- do.call(rbind, apply(beta_all_unlist, 1, find_na_rows))
-  na_rows <- unlist(na_rows_all[, 1])
-  problematic_names <- do.call(rbind, na_rows_all[, 2])
-  if (!is.null(problematic_names)) {
-    problematic_names <- apply(problematic_names, 2, unique)
-  }
-  # ith entry is TRUE if ith repetition among the S returns NA
-  na_rows <- (na_rows >= 1)
-  non_na_rows <- !na_rows
-
-  # adapt error and warning messages accordingly
-  errors <- unique(do.call(c, beta_all[, "error"][non_na_rows]))
-  warningMsgs <- unique(do.call(c, beta_all[, "warning"][non_na_rows]))
-  beta_all <- NULL
-
-  # check if design is regular enough to give enough non-NA returns among
-  # the S repetitions
-  # if more than half of the S repetitions resulted inNAs, stop
-  stopping_criterion <- (sum(na_rows) > (0.5 * S))
-  if (stopping_criterion) {
-    DML_problematic <- sum(grepl("DML", problematic_names)) >= 1
-    reg_problematic <- sum(grepl("gamma", problematic_names)) >= 1
-    # one should only be in here if some NA-values were observed
-    stopifnot(DML_problematic + reg_problematic >= 1)
-    new_error_message <- DML_reg_error_message(is_DML_prob = DML_problematic,
-                                               is_reg_prob = reg_problematic)
-
-    errors <- c(errors, new_error_message)
-  } else if (sum(na_rows) >= 1) { # if some NAs were returned,
-                                  # try to replace them
-    warningMsgs <- c(warningMsgs, "Essentially perfect fit: do S more repetitions.")
-    beta_all_new <- batch_correction(aa = aa, ww = ww, xx = xx, yy = yy,
-                                     K = K,
-                                     gamma = gamma,
-                                     DML = DML,
-                                     do_DML = do_DML,
-                                     do_regsDML = do_regsDML,
-                                     do_regDML = do_regDML,
-                                     do_regDML_all_gamma = do_regDML_all_gamma,
-                                     safety = safety,
-                                     cond_method = cond_method,
-                                     params = params,
-                                     do_parallel = do_parallel,
-                                     parallel = parallel,
-                                     S = S, ncpus = ncpus, cl = cl)
-    beta_all_new <- do.call(rbind, beta_all_new)
-    beta_all_unlist_new <- do.call(rbind, beta_all_new[, "value"])
-
-    # identify NA-rows of beta_all_unlist_new and delete respective warning and
-    # error messages
-    na_rows_all_new <- do.call(rbind, apply(beta_all_unlist_new, 1, find_na_rows))
-    na_rows_new <- unlist(na_rows_all_new[, 1])
-    problematic_names_new <- do.call(rbind, na_rows_all_new[, 2])
-    if (!is.null(problematic_names_new)) {
-      problematic_names_new <- apply(problematic_names_new, 2, unique)
-    }
-    # ith entry is TRUE if ith repetition among the S returns NA
-    na_rows_new <- (na_rows_new >= 1)
-    non_na_rows_new <- !na_rows_new
-
-    sum_na_rows <- sum(na_rows)
-    if (sum(non_na_rows_new) < sum_na_rows) { # there are not enough new
-                                              # non-NA cases
-      # adapt error and warning messages accordingly
-      errors <-
-        unique(c(errors,
-                 unique(do.call(c, beta_all_new[, "error"][non_na_rows_new]))))
-      warningMsgs <-
-        unique(c(warningMsgs,
-                 unique(do.call(c, beta_all_new[, "warning"][non_na_rows_new]))))
-      beta_all_new <- NULL
-
-      DML_problematic_new <- (sum(grepl("DML", problematic_names_new)) >= 1) ||
-        (sum(grepl("DML", problematic_names)) >= 1)
-      reg_problematic_new <- (sum(grepl("gamma", problematic_names_new)) >= 1) ||
-        (sum(grepl("gamma", problematic_names)) >= 1)
-      stopifnot(DML_problematic_new + reg_problematic_new >= 1)
-      new_error_message_new <- DML_reg_error_message(is_DML_prob = DML_problematic_new,
-                                                     is_reg_prob = reg_problematic_new)
-      errors <- unique(c(errors, new_error_message_new))
-
-    } else { # there are enough new non-NA cases
-      # adapt error and warning messages accordingly
-      errors <-
-        unique(c(errors,
-                 unique(do.call(c, beta_all_new[, "error"][non_na_rows_new][seq_len(sum_na_rows)]))))
-      warningMsgs <-
-        unique(c(warningMsgs,
-                 unique(do.call(c, beta_all_new[, "warning"][non_na_rows_new][seq_len(sum_na_rows)]))))
-      beta_all_new <- NULL
-
-      beta_all_unlist <-
-        rbind(beta_all_unlist[non_na_rows, ],
-              beta_all_unlist_new[non_na_rows_new, ][seq_len(sum_na_rows), ])
-      beta_all_unlist_new <- NULL
-    }
-  }
+  # If some NA-rows are present in beta_all_unlist, try to replace them
+  return_W_E_res <-
+    return_W_E_res_fun(beta_all = beta_all, beta_all_unlist = beta_all_unlist,
+                       aa = aa, ww = ww, xx = xx, yy = yy,
+                       K = K, gamma = gamma,
+                       DML = DML, do_DML = do_DML, do_regsDML = do_regsDML,
+                       do_regDML = do_regDML,
+                       do_regDML_all_gamma = do_regDML_all_gamma,
+                       safety = safety, cond_method = cond_method,
+                       params = params, do_parallel = do_parallel,
+                       parallel = parallel, S = S, ncpus = ncpus, cl = cl,
+                       beta_all_new = NULL)
+  beta_all_unlist <- return_W_E_res$beta_all_unlist
+  errors <- return_W_E_res$errors
+  warningMsgs <- return_W_E_res$warningMsgs
+  return_W_E_res <- NULL
 
   # return errors and warnings encountered estimating the
   # conditional expectations
-  if (!is.null(errors)) { # there are errors
-    print_W_E <- if (!is.null(warningMsgs)) { # there are errors and warnings
-      paste("\nError messages:\n",
-            paste(errors, collapse = "\n"),
-            "\n\n",
-            "Warning messages:\n",
-            paste(warningMsgs, collapse = "\n"),
-            sep = "")
-    } else { # there are errors but no warnings
-      paste("\nError messages:",
-            paste(errors, collapse = "\n"))
-    } # end print_W_E
-    stop(print_W_E)
-  } else if (!is.null(warningMsgs)) { # there are warnings but no errors
-    warning(paste("\nWarning messages:",
-                  paste(warningMsgs, collapse = "\n"),
-                  sep = "\n"))
-  }
+  print_W_E_fun(errors, warningMsgs)
 
   # build return object
   to_return <- list()
