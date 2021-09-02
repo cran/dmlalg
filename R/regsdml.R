@@ -33,7 +33,7 @@ batch_correction <- function(aa, ww, xx, yy, K, gamma, DML,
                              do_parallel, parallel, S, ncpus, cl) {
   # batch correction step:
   # The concept of how to elegantly parallelize a function call (and save
-  # all warning and error messages) is taken from the package boot or
+  # all warnings, errors, and messages) is taken from the package boot or
   # lme4. Both packages implement almost identical solutions.
   # See the source code of the package boot: R/bootfuns.R in the function
   # boot().
@@ -64,7 +64,7 @@ batch_correction <- function(aa, ww, xx, yy, K, gamma, DML,
     cond_func_all
     params
     function(colnames.cluster) {
-      tryCatch_W_E(beta_crossfit(aa = aa, ww = ww, xx = xx, yy = yy,
+      tryCatch_WEM(beta_crossfit(aa = aa, ww = ww, xx = xx, yy = yy,
                                  K = K,
                                  gamma = gamma,
                                  DML = DML,
@@ -278,9 +278,10 @@ return_W_E_res_fun <- function(beta_all, beta_all_unlist,
   na_rows <- (na_rows >= 1)
   non_na_rows <- !na_rows
 
-  # adapt error and warning messages accordingly
+  # adapt error and warning messages accordingly (treat messages as warnings)
   errors <- unique(do.call(c, beta_all[, "error"][non_na_rows]))
-  warningMsgs <- unique(do.call(c, beta_all[, "warning"][non_na_rows]))
+  warningMsgs <- unique(c(do.call(c, beta_all[, "warning"][non_na_rows]),
+                          do.call(c, beta_all[, "message"][non_na_rows])))
   beta_all <- NULL
 
   # check if design is regular enough to give enough non-NA returns among
@@ -343,7 +344,8 @@ return_W_E_res_fun <- function(beta_all, beta_all_unlist,
                  unique(do.call(c, beta_all_new[, "error"][non_na_rows_new]))))
       warningMsgs <-
         unique(c(warningMsgs,
-                 unique(do.call(c, beta_all_new[, "warning"][non_na_rows_new]))))
+                 unique(c(do.call(c, beta_all_new[, "warning"][non_na_rows_new]),
+                          do.call(c, beta_all_new[, "message"][non_na_rows_new])))))
       beta_all_new <- NULL
 
       DML_problematic_new <- (sum(grepl("DML", problematic_names_new)) >= 1) ||
@@ -362,7 +364,8 @@ return_W_E_res_fun <- function(beta_all, beta_all_unlist,
                  unique(do.call(c, beta_all_new[, "error"][non_na_rows_new][seq_len(sum_na_rows)]))))
       warningMsgs <-
         unique(c(warningMsgs,
-                 unique(do.call(c, beta_all_new[, "warning"][non_na_rows_new][seq_len(sum_na_rows)]))))
+                 unique(c(do.call(c, beta_all_new[, "warning"][non_na_rows_new][seq_len(sum_na_rows)]),
+                          do.call(c, beta_all_new[, "message"][non_na_rows_new][seq_len(sum_na_rows)])))))
       beta_all_new <- NULL
 
       beta_all_unlist <-

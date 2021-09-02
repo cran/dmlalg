@@ -786,7 +786,7 @@ print.regsdml <- function(x, ...) {
   stopifnot(inherits(x, "regsdml"))
 
   # output the summary of object
-  summary.regsdml(object = x, ...)
+  print.summary.regsdml(summary.regsdml(object = x, ...), ...)
 }
 
 ##' S3method vcov regsdml

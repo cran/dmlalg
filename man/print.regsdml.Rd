@@ -1,4 +1,3 @@
-% Please edit documentation in R/methods.R
 \name{print.regsdml}
 \alias{print.regsdml}
 \title{Printing regsdml fits}

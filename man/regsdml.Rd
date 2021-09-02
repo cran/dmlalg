@@ -1,7 +1,6 @@
 % Please edit documentation in R/regsdml.R
 \name{regsdml}
 \alias{regsdml}
-\alias{dml}
 \alias{regdml}
 \title{Estimating linear coefficients with double machine learning (DML)}
 \usage{
@@ -366,6 +365,7 @@ There are \code{summary}, \code{confint}, \code{coef}, \code{vcov},
 
 \examples{
 ## Generate some data:
+RNGkind("L'Ecuyer-CMRG")
 set.seed(19)
 # true linear parameter
 beta0 <- 1

@@ -161,9 +161,9 @@ residuals_samplesplit <- function(aa, ww, xx, yy, I, Ic,
   list(rX = rX,
        rY = rY,
        rA = rA,
-       rX_gW = tryCatch_W_E(project_ols(resp = rX, pred = rA),
+       rX_gW = tryCatch_WEM(project_ols(resp = rX, pred = rA),
                             matrix(NA, ncol = d, nrow = nn))$value,
-       rY_gW = tryCatch_W_E(project_ols(resp = rY, pred = rA),
+       rY_gW = tryCatch_WEM(project_ols(resp = rY, pred = rA),
                             matrix(NA, ncol = 1, nrow = nn))$value)
 }
 
@@ -220,7 +220,7 @@ get_beta_DML1 <- function(all_residuals_gW) {
   d <- dim(all_residuals_gW[[1]]$rX_gW)[2]
 
   func_tmp <- function(k, all_residuals_gW, d) {
-    tryCatch_W_E(get_ols_coefs(pred = all_residuals_gW[[k]]$rX_gW,
+    tryCatch_WEM(get_ols_coefs(pred = all_residuals_gW[[k]]$rX_gW,
                                resp = all_residuals_gW[[k]]$rY_gW),
                  matrix(NA, nrow = d, ncol = 1))$value
   }
@@ -247,7 +247,7 @@ get_beta_DML2 <- function(all_residuals_gW) {
     vec <- vec + crossprod(all_residuals_gW[[k]]$rX_gW, all_residuals_gW[[k]]$rY_gW) / n
   }
 
-  tryCatch_W_E(qr.solve(mat, vec), matrix(NA, nrow = d, ncol = 1))$value
+  tryCatch_WEM(qr.solve(mat, vec), matrix(NA, nrow = d, ncol = 1))$value
 }
 
 # helper function to estimate beta_0 with regularized DML1 method:
@@ -257,7 +257,7 @@ get_beta_DML2 <- function(all_residuals_gW) {
 # one given value of gamma. The K corresponds to the number of sample splits.
 combine_regDML1_regular_ols <- function(gamma, rX, rX_gW, rY, rY_gW, n) {
   rX_gamma <- rX + (sqrt(gamma) - 1) * rX_gW
-  tryCatch_W_E(get_ols_coefs(pred = rX_gamma,
+  tryCatch_WEM(get_ols_coefs(pred = rX_gamma,
                              resp = rY + (sqrt(gamma) - 1) * rY_gW),
                matrix(NA, ncol = 1, nrow = ncol(as.matrix(rX_gamma))))$value
 }
@@ -276,7 +276,7 @@ get_beta_regDML1 <- function(all_residuals, all_residuals_gW, gamma) {
   for (k in seq_len(K)) {
     beta_regDML1 <-
       beta_regDML1 +
-      tryCatch_W_E(do.call(cbind,
+      tryCatch_WEM(do.call(cbind,
                            lapply(gamma,
                                   combine_regDML1_regular_ols,
                                   rX = all_residuals[[k]]$rX,
@@ -334,7 +334,7 @@ get_beta_regDML2 <- function(all_residuals, all_residuals_gW, gamma) {
   func_tmp <- function(x) {
     qr.solve(x[, seq_len(d), drop = FALSE], x[, d + 1, drop = FALSE])
   }
-  tryCatch_W_E(rbind(apply(mat_vec_gamma, 3, func_tmp)),
+  tryCatch_WEM(rbind(apply(mat_vec_gamma, 3, func_tmp)),
                matrix(NA, nrow = d, ncol = gammalen))$value
 }
 
@@ -373,7 +373,7 @@ beta_crossfit <- function(aa, ww, xx, yy, K, gamma, DML, do_DML, do_regDML,
     # get asymptotic variance of the DML point estimator.
     # If necessary, compute a more stable version of it.
     as_var_DML <-
-      tryCatch_W_E(sigma2_DML(all_residuals = all_matrices$all_residuals,
+      tryCatch_WEM(sigma2_DML(all_residuals = all_matrices$all_residuals,
                               betahat = beta_DML),
                    matrix(NA, nrow = d, ncol = d))
     # return NAs above if matrix inversion in sigma2_DML was infeasible
@@ -383,7 +383,7 @@ beta_crossfit <- function(aa, ww, xx, yy, K, gamma, DML, do_DML, do_regDML,
     # computed.
     if (!is.null(as_var_DML$error)) {
       as_var_DML <-
-        tryCatch_W_E(sigma2_DML_stable(all_residuals = all_matrices$all_residuals,
+        tryCatch_WEM(sigma2_DML_stable(all_residuals = all_matrices$all_residuals,
                                        betahat = beta_DML),
                      matrix(NA, nrow = d, ncol = d))
       if (is.null(as_var_DML$error) & !is.null(as_var_DML$warning)) {

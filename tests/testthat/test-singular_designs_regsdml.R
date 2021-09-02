@@ -83,7 +83,7 @@ if (FALSE) {
   y <- data$yy
   data <- NULL
   res1 <- list(beta_all = beta_all, beta_all_unlist = beta_all_unlist,
-               aa = aa, ww = ww, xx = xx, yy = yy,
+               aa = a, ww = w, xx = x, yy = y,
                K = K, gamma = gamma,
                DML = DML, do_DML = do_DML, do_regsDML = do_regsDML,
                do_regDML = do_regDML,
@@ -102,7 +102,7 @@ if (FALSE) {
   y <- data$yy
   data <- NULL
   res2 <- list(beta_all = beta_all, beta_all_unlist = beta_all_unlist,
-               aa = aa, ww = ww, xx = xx, yy = yy,
+               aa = a, ww = w, xx = x, yy = y,
                K = K, gamma = gamma,
                DML = DML, do_DML = do_DML, do_regsDML = do_regsDML,
                do_regDML = do_regDML,
@@ -123,7 +123,7 @@ if (FALSE) {
   data <- NULL
   cond_method <- rep("ols", 3)
   res3 <- list(beta_all = beta_all, beta_all_unlist = beta_all_unlist,
-               aa = aa, ww = ww, xx = xx, yy = yy,
+               aa = a, ww = w, xx = x, yy = y,
                K = K, gamma = gamma,
                DML = DML, do_DML = do_DML, do_regsDML = do_regsDML,
                do_regDML = do_regDML,
@@ -144,7 +144,7 @@ if (FALSE) {
   DML <- "DML2"
   cond_method = rep("ols", 3)
   res4 <- list(beta_all = beta_all, beta_all_unlist = beta_all_unlist,
-               aa = aa, ww = ww, xx = xx, yy = yy,
+               aa = a, ww = w, xx = x, yy = y,
                K = K, gamma = gamma,
                DML = DML, do_DML = do_DML, do_regsDML = do_regsDML,
                do_regDML = do_regDML,

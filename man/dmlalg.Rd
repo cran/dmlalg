@@ -33,10 +33,44 @@ double machine learning (DML) algorithms in \code{R}.
     fitted with \code{\link{regsdml}}.}
     }
 }
+\section{Partially linear mixed-effects models with repeated measurements}{
+    Our goal is to estimate and perform inference for the linear
+    coefficient in a partially linear mixed-effects model
+    with DML. Machine learning algorithms allows us to incorporate more
+    complex interaction structures and high-dimensional variables.
+
+    \describe{
+    \item{\code{\link{mmdml}}}{Estimates the
+    linear parameter in a PLMM with repeated
+    measurements using
+    double machine learning.}
+    \item{\code{\link{confint.mmdml}}}{A \code{confint} method for objects
+    fitted with \code{\link{mmdml}}.}
+    \item{\code{\link{fixef.mmdml}}}{A \code{fixef} method for objects
+    fitted with \code{\link{mmdml}}.}
+    \item{\code{\link{print.mmdml}}}{A \code{print} method for objects
+    fitted with \code{\link{mmdml}}.}
+    \item{\code{\link{ranef.mmdml}}}{A \code{ranef} method for objects
+    fitted with \code{\link{mmdml}}.}
+    \item{\code{\link{residuals.mmdml}}}{A \code{residuals} method for objects
+    fitted with \code{\link{mmdml}}.}
+    \item{\code{\link{sigma.mmdml}}}{A \code{sigma} method for objects
+    fitted with \code{\link{mmdml}}.}
+    \item{\code{\link{summary.mmdml}}}{A \code{summary} method for objects
+    fitted with \code{\link{mmdml}}.}
+    \item{\code{\link{vcov.mmdml}}}{A \code{vcov} method for objects
+    fitted with \code{\link{mmdml}}.}
+    \item{\code{\link{VarCorr.mmdml}}}{A \code{VarCorr} method for objects
+    fitted with \code{\link{mmdml}}.}
+    }
+}
 
 \references{
 C. Emmenegger and P. \enc{Bühlmann}{Buehlmann}.
 Regularizing Double Machine Learning in Partially Linear Endogenous
 Models, 2021. Preprint arXiv:2101.12525.
+
+C. Emmenegger and P. \enc{Bühlmann}{Buehlmann}.
+Double Machine Learning for Partially Linear Mixed-Effects Models with Repeated Measurements. Preprint arXiv:2108.13657.
 }
 
