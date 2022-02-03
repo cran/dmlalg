@@ -202,11 +202,11 @@ get_beta_mmdml <- function(zz, ww, xx, yy, zz_formula, group, K,
   sigma <- sigma / K
   theta <- theta / K
   beta <- beta / K
-  vcov_sum@x <- vcov_sum@x / K
-  vcov_sum@factors$correlation@sd <- vcov_sum@factors$correlation@sd / K
+  vcov_sum@x <- vcov_sum@x / K ^ 2
+  vcov_sum@factors$correlation@sd <- vcov_sum@factors$correlation@sd / K ^ (3/2)
   vcov_sum@factors$correlation@x <- vcov_sum@factors$correlation@x / K
-  optinfo$derivs$gradient <- optinfo$derivs$gradient / K
-  optinfo$derivs$Hessian <- optinfo$derivs$Hessian / K
+  optinfo$derivs$gradient <- optinfo$derivs$gradient
+  optinfo$derivs$Hessian <- optinfo$derivs$Hessian
   optinfo$val <- optinfo$val / K
 
   # compute random effects b_hat on full partialled-out data
